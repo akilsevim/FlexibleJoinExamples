@@ -23,11 +23,11 @@ import org.apache.asterix.external.cartilage.base.Configuration;
 public class IntervalJoinConfig implements Configuration {
     public IntervalSummary iS1;
     public IntervalSummary iS2;
-    double k;
+    long k;
     double d1;
     double d2;
 
-    IntervalJoinConfig(double d1, double d2, IntervalSummary iS1, IntervalSummary iS2, double k) {
+    IntervalJoinConfig(double d1, double d2, IntervalSummary iS1, IntervalSummary iS2, long k) {
         this.iS1 = iS1;
         this.iS2 = iS2;
 

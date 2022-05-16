@@ -23,9 +23,9 @@ import org.apache.asterix.external.cartilage.base.Summary;
 import org.apache.asterix.external.cartilage.base.types.Interval;
 
 public class IntervalJoin implements FlexibleJoin<Interval, IntervalJoinConfig> {
-    private double k = 2;
+    private long k = 2;
 
-    public IntervalJoin(double k) {
+    public IntervalJoin(long k) {
         this.k = k;
     }
 
@@ -42,8 +42,8 @@ public class IntervalJoin implements FlexibleJoin<Interval, IntervalJoinConfig> 
 
         iS1.add(iS2);
 
-        double d1 = (iS1.oEnd - iS1.oStart) / k;
-        double d2 = (iS1.oEnd - iS1.oStart) / k;
+        double d1 = (double) (iS1.oEnd - iS1.oStart) / k;
+        double d2 = (double) (iS1.oEnd - iS1.oStart) / k;
 
         return new IntervalJoinConfig(d1, d2, iS1, iS2, k);
     }
@@ -55,7 +55,7 @@ public class IntervalJoin implements FlexibleJoin<Interval, IntervalJoinConfig> 
         int j = (int) ((k1.end - intervalJoinConfig.iS1.oStart) / intervalJoinConfig.d1);
         int bucketId = 0;
         for(int s = i; s <= j & s < intervalJoinConfig.k; s++) {
-            bucketId |= 1 << s;
+            bucketId |= 1 << (intervalJoinConfig.k - s - 1);
         }
         /*if (bucketId != 1) {
             System.out.println("bucket ID "+bucketId+":" + k1.start+","+ k1.end);
