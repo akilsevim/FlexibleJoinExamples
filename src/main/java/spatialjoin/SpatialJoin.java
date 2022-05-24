@@ -65,6 +65,10 @@ class computeMBR implements Summary<Rectangle> {
 }
 
 public class SpatialJoin implements FlexibleJoin<Rectangle, SpatialJoinConfiguration> {
+    private static long matchCounter = 0;
+    private static long matchTrueCounter = 0;
+    private static long matchFalseCounter = 0;
+    private static boolean matchPrinted = false;
     @Override
     public Summary<Rectangle> createSummarizer1() {
         return new computeMBR();
@@ -84,7 +88,12 @@ public class SpatialJoin implements FlexibleJoin<Rectangle, SpatialJoinConfigura
         if (c1.MBR.y2 > c2.MBR.y2)
             c1.MBR.y2 = c2.MBR.y2;
 
-        return new SpatialJoinConfiguration(c1.MBR, 32);
+        this.matchCounter = 0;
+        this.matchTrueCounter = 0;
+        this.matchFalseCounter = 0;
+        this.matchPrinted = false;
+
+        return new SpatialJoinConfiguration(c1.MBR, 100);
     }
 
     @Override
@@ -123,13 +132,30 @@ public class SpatialJoin implements FlexibleJoin<Rectangle, SpatialJoinConfigura
     }
 
     @Override
+    public boolean match(int b1, int b2) {
+        this.matchCounter++;
+        //System.out.println("b1:"+b1+"\tb1Start:"+b1Start+"\tb1End:"+b1End+"b2:"+b2+"\tb2Start:"+b2Start+"\tb2End:"+b2End);
+        boolean a = (b1 == b2);
+        if(a) matchTrueCounter++;
+        else matchFalseCounter++;
+        return a;
+    }
+
+    @Override
     public boolean verify(Rectangle k1, Rectangle k2) {
-        double x1 = Math.max(k1.x1, k2.x1);
-        double y1 = Math.max(k1.y1, k2.y1);
-
-        double x2 = Math.min(k1.x2, k2.x2);
-        double y2 = Math.min(k1.y2, k2.y2);
-
-        return !(x1 > x2 || y1 > y2);
+        if(!this.matchPrinted) {
+            System.out.println("match counter: " + this.matchCounter);
+            System.out.println("match true counter: " + this.matchTrueCounter);
+            System.out.println("match False counter: " + this.matchFalseCounter);
+            this.matchPrinted = true;
+        }
+        return true;
+//        double x1 = Math.max(k1.x1, k2.x1);
+//        double y1 = Math.max(k1.y1, k2.y1);
+//
+//        double x2 = Math.min(k1.x2, k2.x2);
+//        double y2 = Math.min(k1.y2, k2.y2);
+//
+//        return !(x1 > x2 || y1 > y2);
     }
 }
