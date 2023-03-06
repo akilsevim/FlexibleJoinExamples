@@ -28,10 +28,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConfig> {
+public class SetSimilarityJoinBackUp implements FlexibleJoin<String, SetSimilarityConfig> {
     Double SimilarityThreshold = 0.0;
 
-    public SetSimilarityJoin(Double SimilarityThreshold) {
+    public SetSimilarityJoinBackUp(Double SimilarityThreshold) {
         this.SimilarityThreshold = SimilarityThreshold;
     }
 
@@ -60,12 +60,14 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
     public int[] assign1(String k1, SetSimilarityConfig setSimilarityConfig) {
         int startIx = 0;
         int l = k1.length();
-        k1 = k1.toLowerCase();
+        //k1 = k1.toLowerCase();
 
         ArrayList<Integer> ranks = new ArrayList<>();
-        StringBuilder stringBuilder = new StringBuilder();
         int length = 0;
+        StringBuilder stringBuilder = new StringBuilder();
+        //System.out.println("Text:" + k1);
         while (startIx < l) {
+
             while (startIx < l && isSeparator(k1.charAt(startIx))) {
                 startIx++;
             }
@@ -75,30 +77,40 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
 
                 stringBuilder.append(k1.charAt(startIx));
                 startIx++;
+
             }
             int tokenEnd = startIx;
 
             // Emit token.
 
             //String token = k1.substring(tokenStart, tokenEnd);
-            String token = stringBuilder.toString();
-            if(!token.isEmpty()) {
-                ranks.add(setSimilarityConfig.S.get(token));
-                length++;
+            if(stringBuilder.length() != 0) {
+                //System.out.println("Token:" + stringBuilder.toString());
+                ranks.add(setSimilarityConfig.S.get(stringBuilder.toString()));
                 stringBuilder = new StringBuilder();
+                length++;
             }
 
         }
+        if(ranks!= null && ranks.size() > 0) {
+            for(int r: ranks) {
+                System.out.println("Rank:"+r);
+            }
+            int PrefixLength = (int) (length - Math.ceil(SimilarityThreshold * length) + 1);
+            PrefixLength = Math.min(length, PrefixLength);
+            int[] ranksToReturn = new int[PrefixLength];
+            Collections.sort(ranks);
+            for (int i = 0; i < PrefixLength; i++) {
+                ranksToReturn[i] = ranks.get(i);
+            }
+            return ranksToReturn;
+        } else return new int[0];
 
-        int PrefixLength = length == 0?0:(int) (length - Math.ceil(SimilarityThreshold * length) + 1);
+    }
 
-        int[] ranksToReturn = new int[PrefixLength];
-
-        Collections.sort(ranks);
-        for (int i = 0; i < PrefixLength; i++) {
-            ranksToReturn[i] = ranks.get(i);
-        }
-        return ranksToReturn;
+    @Override
+    public boolean verify(int b1, String k1, int b2, String k2, SetSimilarityConfig setSimilarityConfig) {
+        return verify(k1, k2);
     }
 
     @Override
@@ -116,6 +128,7 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
         }*/
 
         return calculateJaccardSimilarityHashMap(k1, k2) >= SimilarityThreshold;
+        //return true;
 
     }
 
@@ -135,11 +148,11 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
         String build;
 
         if(leftLength<rightLength) {
-            build = left.toLowerCase();
-            probe = right.toLowerCase();
+            build = left;
+            probe = right;
         } else {
-            build = right.toLowerCase();
-            probe = left.toLowerCase();
+            build = right;
+            probe = left;
         }
 
         int startIx = 0;
@@ -147,6 +160,7 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
 
         // Skip separators at beginning of string.
         StringBuilder stringBuilder = new StringBuilder();
+
         while (startIx < l) {
             while (startIx < l && isSeparator(build.charAt(startIx))) {
                 startIx++;
@@ -161,11 +175,10 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
 
             // Emit token.
             //String token = build.substring(tokenStart, tokenEnd);
-            String token = stringBuilder.toString();
-            if(!token.isEmpty()) {
-                map.merge(token, 1, Integer::sum);
-                leftTokenC++;
+            if(stringBuilder.length() != 0) {
+                map.merge(stringBuilder.toString(), 1, Integer::sum);
                 stringBuilder = new StringBuilder();
+                leftTokenC++;
             }
         }
 
@@ -181,22 +194,22 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
             int tokenStart = startIx;
 
             while (startIx < l && !isSeparator(probe.charAt(startIx))) {
-                stringBuilder.append(probe.charAt(startIx));
                 startIx++;
+                stringBuilder.append(probe.charAt(startIx));
             }
             int tokenEnd = startIx;
 
             // Emit token.
             //String token = probe.substring(tokenStart, tokenEnd);
-            String token = stringBuilder.toString();
-            if(!token.isEmpty()) {
+            if(stringBuilder.length() != 0) {
+                String token = stringBuilder.toString();
                 if (map.containsKey(token)) {
                     map.merge(token, -1, Integer::sum);
                     if (map.get(token) == 0) map.remove(token);
                     intersectionSize++;
                 }
-                rightTokenC++;
                 stringBuilder = new StringBuilder();
+                rightTokenC++;
             }
         }
 
@@ -206,9 +219,9 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
     }
 
     private static boolean isSeparator(char c) {
+        return Character.isSpaceChar(c);
         //return !(Character.isLetterOrDigit(c) || Character.getType(c) == Character.OTHER_LETTER
         //        || Character.getType(c) == Character.OTHER_NUMBER);
-        return Character.isSpaceChar(c);
     }
 
 }

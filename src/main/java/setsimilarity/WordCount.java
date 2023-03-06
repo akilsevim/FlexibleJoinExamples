@@ -71,8 +71,9 @@ public class WordCount implements Summary<String> {
         return arr;
     }
 
-    private boolean isSeparator(char c) {
-        return !(Character.isLetterOrDigit(c) || Character.getType(c) == Character.OTHER_LETTER
-                || Character.getType(c) == Character.OTHER_NUMBER);
+    private static boolean isSeparator(char c) {
+        //return !(Character.isLetterOrDigit(c) || Character.getType(c) == Character.OTHER_LETTER
+        //        || Character.getType(c) == Character.OTHER_NUMBER);
+        return Character.isSpaceChar(c);
     }
 }

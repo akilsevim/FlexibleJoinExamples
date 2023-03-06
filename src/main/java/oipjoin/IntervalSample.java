@@ -21,15 +21,15 @@ package oipjoin;
 
 import org.apache.asterix.external.cartilage.base.Summary;
 
-public class IntervalSummary implements Summary<long[]> {
+import java.util.ArrayList;
+
+public class IntervalSample {
     public long oStart = Long.MAX_VALUE;
     public long oEnd = Long.MIN_VALUE;
 
+    ArrayList<Long[]> sample1 = new ArrayList<>();
+    ArrayList<Long[]> sample2 = new ArrayList<>();
 
-
-
-
-    @Override
     public void add(long[] k) {
         if (k[0] < this.oStart)
             this.oStart = k[0];
@@ -37,9 +37,8 @@ public class IntervalSummary implements Summary<long[]> {
             this.oEnd = k[1];
     }
 
-    @Override
     public void add(Summary<long[]> s) {
-        IntervalSummary iS = (IntervalSummary) s;
+        IntervalSample iS = (IntervalSample) s;
 
         if (iS.oStart < this.oStart)
             this.oStart = iS.oStart;

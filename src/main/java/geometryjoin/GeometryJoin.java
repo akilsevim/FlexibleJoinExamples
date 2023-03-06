@@ -70,6 +70,10 @@ class computeMBR implements Summary<OGCGeometry> {
 
 public class
 GeometryJoin implements FlexibleJoin<OGCGeometry, GeometryJoinConfiguration> {
+    private int n;
+    public GeometryJoin(int n) {
+        this.n = n;
+    }
     @Override
     public Summary<OGCGeometry> createSummarizer1() {
         return new computeMBR();
@@ -89,7 +93,7 @@ GeometryJoin implements FlexibleJoin<OGCGeometry, GeometryJoinConfiguration> {
         if (c1.MBR.y2 > c2.MBR.y2)
             c1.MBR.y2 = c2.MBR.y2;
 
-        return new GeometryJoinConfiguration(c1.MBR, 32);
+        return new GeometryJoinConfiguration(c1.MBR, n);
     }
 
     @Override
