@@ -16,17 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package setsimilarity;
+package textsimilarity;
 
 import org.apache.asterix.external.cartilage.base.FlexibleJoin;
 import org.apache.asterix.external.cartilage.base.Summary;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -60,14 +58,39 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
 
     @Override
     public int[] assign1(String k1, SetSimilarityConfig setSimilarityConfig) {
-
+        int startIx = 0;
+        int l = k1.length();
+        k1 = k1.toLowerCase();
 
         ArrayList<Integer> ranks = new ArrayList<>();
-        ArrayList<String> tokens = tokenize(k1);
-        for(String token:tokens) {
-            ranks.add(setSimilarityConfig.S.get(token));
+        StringBuilder stringBuilder = new StringBuilder();
+        int length = 0;
+        while (startIx < l) {
+            while (startIx < l && isSeparator(k1.charAt(startIx))) {
+                startIx++;
+            }
+            int tokenStart = startIx;
+
+            while (startIx < l && !isSeparator(k1.charAt(startIx))) {
+
+                stringBuilder.append(k1.charAt(startIx));
+                startIx++;
+            }
+            int tokenEnd = startIx;
+
+            // Emit token.
+
+            //String token = k1.substring(tokenStart, tokenEnd);
+            String token = stringBuilder.toString();
+            if(!token.isEmpty() && setSimilarityConfig.S.containsKey(token)) {
+                ranks.add(setSimilarityConfig.S.get(token));
+                length++;
+                stringBuilder = new StringBuilder();
+            }
+
         }
-        int PrefixLength = tokens.size() == 0?0:(int) (tokens.size() - Math.ceil(SimilarityThreshold * tokens.size()) + 1);
+
+        int PrefixLength = length == 0?0:(int) (length - Math.ceil(SimilarityThreshold * length) + 1);
 
         int[] ranksToReturn = new int[PrefixLength];
 
@@ -80,11 +103,8 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
 
     @Override
     public boolean verify(String k1, String k2) {
-        ArrayList<String> tokens1 = tokenize(k1);
-        ArrayList<String> tokens2 = tokenize(k2);
-
-        int leftLength = tokens1.size();
-        int rightLength = tokens2.size();
+        /*int leftLength = k1.length();
+        int rightLength = k2.length();
 
         // apply length filter
         int lengthLowerBound = (int) Math.ceil(SimilarityThreshold * leftLength);
@@ -93,9 +113,9 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
                 (lengthLowerBound <= rightLength) && (rightLength <= 1.0f / SimilarityThreshold * leftLength);
         if (!passesLengthFilter) {
             return false;
-        }
+        }*/
 
-        return calculateJaccardSimilarityHashMapTokens(tokens1, tokens2) >= SimilarityThreshold;
+        return calculateJaccardSimilarityHashMap(k1, k2) >= SimilarityThreshold;
 
     }
 
@@ -185,79 +205,10 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
         return sim;
     }
 
-    public static double calculateJaccardSimilarityHashMapTokens(ArrayList<String> left, ArrayList<String> right) {
-
-        double intersectionSize = 0;
-
-        int leftLength = left.size();
-        int rightLength = right.size();
-
-        int leftTokenC = 0;
-        int rightTokenC = 0;
-
-        HashMap<String, Integer> map = new HashMap<>();
-
-        ArrayList<String> probe;
-        ArrayList<String> build;
-
-        if(leftLength<rightLength) {
-            build = left;
-            probe = right;
-        } else {
-            build = right;
-            probe = left;
-        }
-
-        for (String token:build
-             ) {
-            map.merge(token, 1, Integer::sum);
-            leftTokenC++;
-        }
-
-        for (String token:probe
-        ) {
-            if (map.containsKey(token)) {
-                map.merge(token, -1, Integer::sum);
-                if (map.get(token) == 0) map.remove(token);
-                intersectionSize++;
-            }
-            rightTokenC++;
-        }
-
-        double sim = (intersectionSize / ((leftTokenC + rightTokenC) - intersectionSize));
-        sim = Math.round(sim * 100000000d) / 100000000d;
-        return sim;
-    }
-
-
     private static boolean isSeparator(char c) {
         return !(Character.isLetterOrDigit(c) || Character.getType(c) == Character.OTHER_LETTER
                 || Character.getType(c) == Character.OTHER_NUMBER);
         //return Character.isSpaceChar(c);
-    }
-
-    public ArrayList<String> tokenize(String text) {
-        StringBuilder stringBuilder = new StringBuilder();
-        ArrayList<String> returnList = new ArrayList<>();
-        int startIx = 0;
-        int l = text.length();
-        while (startIx < l) {
-            while (startIx < l && isSeparator(text.charAt(startIx))) {
-                startIx++;
-            }
-
-            while (startIx < l && !isSeparator(text.charAt(startIx))) {
-                stringBuilder.append(text.charAt(startIx));
-                startIx++;
-            }
-
-            String token = stringBuilder.toString().toLowerCase();
-            if(!token.isEmpty()) {
-                returnList.add(token);
-                stringBuilder = new StringBuilder();
-            }
-        }
-        return returnList;
     }
 
 }

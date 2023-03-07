@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package setsimilarity;
+package textsimilarity;
 
 import org.apache.asterix.external.cartilage.base.Summary;
 
@@ -30,7 +30,7 @@ public class WordCount implements Summary<String> {
 
     @Override
     public void add(String k) {
-        ArrayList<String> tokens = tokenize(k);
+        String[] tokens = tokenizer(k);
         for (String token : tokens) {
             WordCountMap.merge(token, 1, Integer::sum);
         }
@@ -44,28 +44,31 @@ public class WordCount implements Summary<String> {
         }
     }
 
-    public ArrayList<String> tokenize(String text) {
-        StringBuilder stringBuilder = new StringBuilder();
-        ArrayList<String> returnList = new ArrayList<>();
+    public String[] tokenizer(String text) {
+        ArrayList<String> tokens = new ArrayList<>();
+        String lowerCaseText = text.toLowerCase();
         int startIx = 0;
-        int l = text.length();
-        while (startIx < l) {
-            while (startIx < l && isSeparator(text.charAt(startIx))) {
+
+        while (startIx < lowerCaseText.length()) {
+            while (startIx < lowerCaseText.length() && isSeparator(lowerCaseText.charAt(startIx))) {
                 startIx++;
             }
+            int tokenStart = startIx;
 
-            while (startIx < l && !isSeparator(text.charAt(startIx))) {
-                stringBuilder.append(text.charAt(startIx));
+            while (startIx < lowerCaseText.length() && !isSeparator(lowerCaseText.charAt(startIx))) {
                 startIx++;
             }
+            int tokenEnd = startIx;
 
-            String token = stringBuilder.toString().toLowerCase();
-            if(!token.isEmpty()) {
-                returnList.add(token);
-                stringBuilder = new StringBuilder();
-            }
+            String token = lowerCaseText.substring(tokenStart, tokenEnd);
+
+            if (!token.isEmpty())
+                tokens.add(token);
+
         }
-        return returnList;
+        String[] arr = new String[tokens.size()];
+        arr = tokens.toArray(arr);
+        return arr;
     }
 
     private static boolean isSeparator(char c) {

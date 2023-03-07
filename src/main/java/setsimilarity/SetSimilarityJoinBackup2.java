@@ -30,10 +30,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConfig> {
+public class SetSimilarityJoinBackup2 implements FlexibleJoin<String, SetSimilarityConfig> {
     Double SimilarityThreshold = 0.0;
 
-    public SetSimilarityJoin(Double SimilarityThreshold) {
+    public SetSimilarityJoinBackup2(Double SimilarityThreshold) {
         this.SimilarityThreshold = SimilarityThreshold;
     }
 
@@ -209,7 +209,7 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
         }
 
         for (String token:build
-             ) {
+        ) {
             map.merge(token, 1, Integer::sum);
             leftTokenC++;
         }
