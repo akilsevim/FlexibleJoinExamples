@@ -30,9 +30,22 @@ public class WordCount implements Summary<String> {
 
     @Override
     public void add(String k) {
-        ArrayList<String> tokens = tokenize(k);
-        for (String token : tokens) {
-            WordCountMap.merge(token, 1, Integer::sum);
+        StringBuilder stringBuilder = new StringBuilder();
+        int startIx = 0;
+        int l = k.length();
+        while (startIx < l) {
+            while (startIx < l && isSeparator(k.charAt(startIx))) {
+                startIx++;
+            }
+            while (startIx < l && !isSeparator(k.charAt(startIx))) {
+                stringBuilder.append(Character.toLowerCase(k.charAt(startIx)));
+                startIx++;
+            }
+            if(stringBuilder.length() > 0) {
+                String token = stringBuilder.toString();
+                WordCountMap.merge(token, 1, Integer::sum);
+                stringBuilder = new StringBuilder();
+            }
         }
     }
 
@@ -45,27 +58,26 @@ public class WordCount implements Summary<String> {
     }
 
     public ArrayList<String> tokenize(String text) {
+        ArrayList<String> tokens = new ArrayList<>();
+        //text = text.toLowerCase();
         StringBuilder stringBuilder = new StringBuilder();
-        ArrayList<String> returnList = new ArrayList<>();
         int startIx = 0;
         int l = text.length();
         while (startIx < l) {
             while (startIx < l && isSeparator(text.charAt(startIx))) {
                 startIx++;
             }
-
             while (startIx < l && !isSeparator(text.charAt(startIx))) {
-                stringBuilder.append(text.charAt(startIx));
+                stringBuilder.append(Character.toLowerCase(text.charAt(startIx)));
                 startIx++;
             }
-
-            String token = stringBuilder.toString().toLowerCase();
-            if(!token.isEmpty()) {
-                returnList.add(token);
+            if(stringBuilder.length() > 0) {
+                String token = stringBuilder.toString();
+                tokens.add(token);
                 stringBuilder = new StringBuilder();
             }
         }
-        return returnList;
+        return tokens;
     }
 
     private static boolean isSeparator(char c) {
@@ -74,3 +86,4 @@ public class WordCount implements Summary<String> {
         //return Character.isSpaceChar(c);
     }
 }
+
