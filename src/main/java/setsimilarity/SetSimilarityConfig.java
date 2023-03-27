@@ -21,9 +21,10 @@ package setsimilarity;
 
 import org.apache.asterix.external.cartilage.base.Configuration;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SetSimilarityConfig implements Configuration {
-    HashMap<String, Integer> S = new HashMap<>();
+    ConcurrentHashMap<String, Integer> S = new ConcurrentHashMap<>();
 
     SetSimilarityConfig(String[] OrderedTokens) {
         for (int i = 0; i < OrderedTokens.length; i++) {

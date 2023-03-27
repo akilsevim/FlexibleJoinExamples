@@ -23,13 +23,37 @@ import org.apache.asterix.external.cartilage.base.Summary;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class WordCount implements Summary<String> {
 
-    public Map<String, Integer> WordCountMap = new HashMap<>();
+    public ConcurrentHashMap<String, Integer> WordCountMap = new ConcurrentHashMap<>();
 
     @Override
     public void add(String k) {
+        int characterIndex = 0;
+        int stringLength = k.length();
+        int tokenStart;
+        int tokenEnd;
+        while (characterIndex < stringLength) {
+            //skip separators
+            while (characterIndex < stringLength && isSeparator(k.charAt(characterIndex))) {
+                characterIndex++;
+            }
+            tokenStart = characterIndex;
+            //collect characters
+            while (characterIndex < stringLength && !isSeparator(k.charAt(characterIndex))) {
+                characterIndex++;
+            }
+            tokenEnd = characterIndex;
+            if(tokenEnd > tokenStart) {
+                String token = k.substring(tokenStart, tokenEnd).toLowerCase();
+                WordCountMap.merge(token, 1, Integer::sum);
+            }
+        }
+    }
+
+    public void add_sb(String k) {
         StringBuilder stringBuilder = new StringBuilder();
         int startIx = 0;
         int l = k.length();

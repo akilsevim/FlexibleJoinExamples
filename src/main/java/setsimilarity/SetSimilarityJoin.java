@@ -58,8 +58,7 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
 
     }
 
-    @Override
-    public int[] assign1(String k1, SetSimilarityConfig setSimilarityConfig) {
+    public int[] assign1_sb(String k1, SetSimilarityConfig setSimilarityConfig) {
 
         ArrayList<Integer> ranks = new ArrayList<>();
 
@@ -67,7 +66,8 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
         int startIx = 0;
         int l = k1.length();
         int rLength = 0;
-//        StringBuilder stringBuilder1 = new StringBuilder();
+        //StringBuilder stringBuilder1 = new StringBuilder();
+        //System.out.println("");
         while (startIx < l) {
             while (startIx < l && isSeparator(k1.charAt(startIx))) {
                 startIx++;
@@ -79,7 +79,7 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
             if(stringBuilder.length() > 0) {
                 String token = stringBuilder.toString();
                 ranks.add(setSimilarityConfig.S.get(token));
-//                stringBuilder1.append(token).append(":").append(setSimilarityConfig.S.get(token)).append(",");
+                //stringBuilder1.append(token).append(":").append(setSimilarityConfig.S.get(token)).append(",");
                 rLength++;
                 stringBuilder = new StringBuilder();
             }
@@ -87,19 +87,72 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
 
         if(rLength == 0) return new int[0];
 
-        int PrefixLength = rLength==1?rLength:(int) (rLength - Math.ceil(SimilarityThreshold * rLength));
-//        System.out.println(stringBuilder1 + " Pl: " + PrefixLength);
+        int PrefixLength = (int) (rLength - Math.ceil(SimilarityThreshold * rLength)) + 1;
+        //System.out.println("\n"+stringBuilder1 + " Pl: " + PrefixLength);
         int[] ranksToReturn = new int[PrefixLength];
 
         Collections.sort(ranks);
         ranksToReturn[0] = ranks.get(0);
-        for(int i = 1,added = 1; i < ranks.size() & added < PrefixLength; i++) {
+        //System.out.print("Ranks:");
+        int added = 1;
+        for(int i = 1; i < PrefixLength; i++) {
+            if(ranks.get(i) != ranksToReturn[added - 1]) {
+                ranksToReturn[added] = ranks.get(i);
+                //System.out.print(ranksToReturn[added] + ",");
+                added++;
+            }
+        }
+        return ArrayUtils.subarray(ranksToReturn, 0, added);
+    }
+
+
+    @Override
+    public int[] assign1(String k1, SetSimilarityConfig setSimilarityConfig) {
+
+        ArrayList<Integer> ranks = new ArrayList<>();
+
+        int characterIndex = 0;
+        int stringLength = k1.length();
+        int tokenCount = 0;
+        int tokenStart;
+        int tokenEnd;
+        while (characterIndex < stringLength) {
+            //skip separators
+            while (characterIndex < stringLength && isSeparator(k1.charAt(characterIndex))) {
+                characterIndex++;
+            }
+            tokenStart = characterIndex;
+            //collect characters
+            while (characterIndex < stringLength && !isSeparator(k1.charAt(characterIndex))) {
+                characterIndex++;
+            }
+            tokenEnd = characterIndex;
+            if(tokenEnd > tokenStart) {
+                String token = k1.substring(tokenStart, tokenEnd).toLowerCase();
+                if(setSimilarityConfig.S.containsKey(token)) {
+                    ranks.add(setSimilarityConfig.S.get(token));
+                    tokenCount++;
+                }
+
+            }
+        }
+
+        if(tokenCount == 0) return new int[0];
+
+        int PrefixLength = (int) (tokenCount - Math.ceil(SimilarityThreshold * tokenCount)) + 1;
+        int[] ranksToReturn = new int[PrefixLength];
+
+        Collections.sort(ranks);
+        ranksToReturn[0] = ranks.get(0);
+
+        int added = 1;
+        for(int i = 1; i < PrefixLength; i++) {
             if(ranks.get(i) != ranksToReturn[added - 1]) {
                 ranksToReturn[added] = ranks.get(i);
                 added++;
             }
         }
-        return ranksToReturn;
+        return ArrayUtils.subarray(ranksToReturn, 0, added);
     }
 
 //    @Override
@@ -107,8 +160,7 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
 //        return true;
 //    }
 
-    @Override
-    public boolean verify(String k1, String k2) {
+    public boolean verify_sb(String k1, String k2) {
 
 //        int leftLength = k1.length();
 //        int rightLength = k2.length();
@@ -125,7 +177,7 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
         int rightLength = k2.length();
 
         double intersectionSize = 0;
-        String temp;
+        /*String temp;
         int tempL;
         if(leftLength < rightLength) {
             temp = k1;
@@ -134,50 +186,56 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
             rightLength = tempL;
             k1 = k2;
             k2 = temp;
-        }
+        }*/
 
         HashMap<String, Integer> map = new HashMap<>();
-        //StringBuilder stringBuilder = new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder();
         int startIx = 0;
         int l = leftLength;
+        int lC = 0;
         while (startIx < l) {
             int tokenStart = startIx;
 
-            while (startIx < l && !isSeparator(k1.charAt(startIx))) {
+            while (startIx < l && isSeparator(k1.charAt(startIx))) {
                 startIx++;
             }
-            int tokenEnd = startIx;
+            while (startIx < l && !isSeparator(k1.charAt(startIx))) {
+                stringBuilder.append(Character.toLowerCase(k1.charAt(startIx)));
+                startIx++;
+            }
 
             // Emit token.
 
 
-            if(tokenStart < tokenEnd) {
-                String token = k1.substring(tokenStart, tokenEnd).toLowerCase();
+            if(stringBuilder.length() > 0) {
+                //String token = k1.substring(tokenStart, tokenEnd).toLowerCase();
 
-                map.merge(token, 1, Integer::sum);
-                leftLength++;
-                //stringBuilder = new StringBuilder();
+                map.merge(stringBuilder.toString(), 1, Integer::sum);
+                lC++;
+                stringBuilder = new StringBuilder();
             }
         }
 
         //stringBuilder = new StringBuilder();
         startIx = 0;
-        int minUnionSize = leftLength;
+        //int minUnionSize = leftLength;
         l = rightLength;
+        int rC = 0;
         while (startIx < l) {
-            int tokenStart = startIx;
-
-            while (startIx < l && !isSeparator(k2.charAt(startIx))) {
+            while (startIx < l && isSeparator(k2.charAt(startIx))) {
                 startIx++;
             }
-            int tokenEnd = startIx;
+            while (startIx < l && !isSeparator(k2.charAt(startIx))) {
+                stringBuilder.append(Character.toLowerCase(k2.charAt(startIx)));
+                startIx++;
+            }
 
             // Emit token.
 
 
-            if(tokenStart < tokenEnd) {
-                String token = k2.substring(tokenStart, tokenEnd).toLowerCase();
-                //String token = stringBuilder.toString();
+            if(stringBuilder.length() > 0) {
+                //String token = k2.substring(tokenStart, tokenEnd).toLowerCase();
+                String token = stringBuilder.toString();
                 if (map.containsKey(token)) {
                     if (map.get(token) == 1) map.remove(token);
                     else {
@@ -196,8 +254,127 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
 //                        return false;
 //                    }
 //                }
-                rightLength++;
-                //stringBuilder = new StringBuilder();
+                rC++;
+                stringBuilder = new StringBuilder();
+            }
+        }
+
+        double sim = (intersectionSize / ((lC + rC) - intersectionSize));
+        sim = Math.round(sim * 100000000d) / 100000000d;
+
+        return sim >= SimilarityThreshold;
+        //return true;
+
+    }
+
+    public boolean verify_s(String k1, String k2) {
+
+        int leftLength = k1.length();
+        int rightLength = k2.length();
+
+        // apply length filter
+        int lengthLowerBound = (int) Math.ceil(SimilarityThreshold * leftLength);
+
+        boolean passesLengthFilter =
+                (lengthLowerBound <= rightLength) && (rightLength <= 1.0f / SimilarityThreshold * leftLength);
+        if (!passesLengthFilter) {
+            return false;
+        }
+
+        double intersectionSize = 0;
+
+        HashMap<String, Integer> map = new HashMap<>();
+
+        int characterIndex = 0;
+        int stringLength = leftLength;
+        int tokenCount = 0;
+        int tokenStart;
+        int tokenEnd;
+        while (characterIndex < stringLength) {
+            //skip separators
+            while (characterIndex < stringLength && isSeparator(k1.charAt(characterIndex))) {
+                characterIndex++;
+            }
+            tokenStart = characterIndex;
+            //collect characters
+            while (characterIndex < stringLength && !isSeparator(k1.charAt(characterIndex))) {
+                characterIndex++;
+            }
+            tokenEnd = characterIndex;
+            if(tokenEnd > tokenStart) {
+                String token = k1.substring(tokenStart, tokenEnd).toLowerCase();
+                map.merge(token, 1, Integer::sum);
+                tokenCount++;
+            }
+        }
+
+        characterIndex = 0;
+        stringLength = rightLength;
+
+        while (characterIndex < stringLength) {
+            //skip separators
+            while (characterIndex < stringLength && isSeparator(k2.charAt(characterIndex))) {
+                characterIndex++;
+            }
+            tokenStart = characterIndex;
+            //collect characters
+            while (characterIndex < stringLength && !isSeparator(k2.charAt(characterIndex))) {
+                characterIndex++;
+            }
+            tokenEnd = characterIndex;
+            if(tokenEnd > tokenStart) {
+                String token = k2.substring(tokenStart, tokenEnd).toLowerCase();
+                if (map.containsKey(token)) {
+                    if (map.get(token) == 1) map.remove(token);
+                    else {
+                        map.merge(token, -1, Integer::sum);
+                    }
+                    intersectionSize++;
+                }
+                tokenCount++;
+            }
+        }
+
+        double sim = (intersectionSize / (tokenCount - intersectionSize));
+        sim = Math.round(sim * 100000000d) / 100000000d;
+
+        return sim >= SimilarityThreshold;
+
+    }
+
+    @Override
+    public boolean verify(String k1, String k2) {
+
+        ArrayList<String> left = tokenize(k1);
+        ArrayList<String> right = tokenize(k2);
+
+        int leftLength = left.size();
+        int rightLength = right.size();
+
+        // apply length filter
+        int lengthLowerBound = (int) Math.ceil(SimilarityThreshold * leftLength);
+
+        boolean passesLengthFilter =
+                (lengthLowerBound <= rightLength) && (rightLength <= 1.0f / SimilarityThreshold * leftLength);
+        if (!passesLengthFilter) {
+            return false;
+        }
+
+        double intersectionSize = 0;
+
+        HashMap<String, Integer> map = new HashMap<>();
+
+        for(String token: left) {
+            map.merge(token, 1, Integer::sum);
+        }
+
+        for(String token: right) {
+            if (map.containsKey(token)) {
+                if (map.get(token) == 1) map.remove(token);
+                else {
+                    map.merge(token, -1, Integer::sum);
+                }
+                intersectionSize++;
             }
         }
 
@@ -205,7 +382,6 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
         sim = Math.round(sim * 100000000d) / 100000000d;
 
         return sim >= SimilarityThreshold;
-        //return true;
 
     }
 
@@ -252,22 +428,24 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
 
     public ArrayList<String> tokenize(String text) {
         ArrayList<String> tokens = new ArrayList<>();
-        //text = text.toLowerCase();
-        StringBuilder stringBuilder = new StringBuilder();
-        int startIx = 0;
-        int l = text.length();
-        while (startIx < l) {
-            while (startIx < l && isSeparator(Character.toLowerCase(text.charAt(startIx)))) {
-                startIx++;
+        int characterIndex = 0;
+        int stringLength = text.length();
+        int tokenStart;
+        int tokenEnd;
+        while (characterIndex < stringLength) {
+            //skip separators
+            while (characterIndex < stringLength && isSeparator(text.charAt(characterIndex))) {
+                characterIndex++;
             }
-            while (startIx < l && !isSeparator(Character.toLowerCase(text.charAt(startIx)))) {
-                stringBuilder.append(Character.toLowerCase(text.charAt(startIx)));
-                startIx++;
+            tokenStart = characterIndex;
+            //collect characters
+            while (characterIndex < stringLength && !isSeparator(text.charAt(characterIndex))) {
+                characterIndex++;
             }
-            if(stringBuilder.length() > 0) {
-                String token = stringBuilder.toString();
+            tokenEnd = characterIndex;
+            if(tokenEnd > tokenStart) {
+                String token = text.substring(tokenStart, tokenEnd).toLowerCase();
                 tokens.add(token);
-                stringBuilder = new StringBuilder();
             }
         }
         return tokens;
