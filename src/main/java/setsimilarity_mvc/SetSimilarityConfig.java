@@ -16,13 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package setsimilarity;
+package setsimilarity_mvc;
 
 
 import org.apache.asterix.external.cartilage.base.Configuration;
+
 import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class SetSimilarityConfig implements Configuration {
     private HashMap<String, Integer> S = new HashMap<>();

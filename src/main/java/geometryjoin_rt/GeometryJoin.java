@@ -3,7 +3,7 @@
 // (powered by FernFlower decompiler)
 //
 
-package geometryjoin;
+package geometryjoin_rt;
 
 import com.esri.core.geometry.Envelope;
 import com.esri.core.geometry.ogc.OGCGeometry;
@@ -143,6 +143,41 @@ public class GeometryJoin implements FlexibleJoin<OGCGeometry, GeometryJoinConfi
 
         return returnArray;
     }
+
+    public boolean verify(int b1, OGCGeometry k1, int b2, OGCGeometry k2, GeometryJoinConfiguration c) {
+        if (this.verify(k1, k2)) {
+            Envelope env1 = new Envelope();
+            Envelope env2 = new Envelope();
+
+            k1.getEsriGeometry().queryEnvelope(env1);
+            k2.getEsriGeometry().queryEnvelope(env2);
+
+            double k1x1 = env1.getXMin();
+            double k1y1 = env1.getYMin();
+            double k2x1 = env2.getXMin();
+            double k2y1 = env2.getYMin();
+
+            k1x1 = Math.max(k1x1, k2x1);
+            k1y1 = Math.max(k1y1, k2y1);
+
+            double minX = c.Grid[0][0];
+            double minY = c.Grid[0][1];
+            double maxX = c.Grid[1][0];
+            double maxY = c.Grid[1][1];
+
+            int row = (int) Math.ceil((k1y1 - minY) * this.n / (maxY - minY));
+            int col = (int) Math.ceil((k1x1 - minX) * this.n / (maxX - minX));
+
+            row = Math.min(Math.max(1, row), this.n * this.n);
+            col = Math.min(Math.max(1, col), this.n * this.n);
+
+            int tileId = (row - 1) * this.n + col;
+            return tileId == b2;
+        }
+
+        return false;
+    }
+
     public boolean verify(OGCGeometry k1, OGCGeometry k2) {
         return k1.contains(k2);
     }

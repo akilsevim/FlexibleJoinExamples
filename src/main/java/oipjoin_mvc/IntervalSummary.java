@@ -16,25 +16,34 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package setsimilarity;
+package oipjoin_mvc;
 
 
-import org.apache.asterix.external.cartilage.base.Configuration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import org.apache.asterix.external.cartilage.base.Summary;
 
-public class SetSimilarityConfig implements Configuration {
-    private HashMap<String, Integer> S = new HashMap<>();
+public class IntervalSummary implements Summary<long[]> {
+    public long oStart = Long.MAX_VALUE;
+    public long oEnd = Long.MIN_VALUE;
 
-    SetSimilarityConfig(String[] OrderedTokens) {
-        for (int i = 0; i < OrderedTokens.length; i++) {
-            S.put(OrderedTokens[i], i);
-        }
-        //System.out.println("Number of Tokens First Config:" + S.size());
+
+
+
+
+    @Override
+    public void add(long[] k) {
+        if (k[0] < this.oStart)
+            this.oStart = k[0];
+        if (k[1] > this.oEnd)
+            this.oEnd = k[1];
     }
 
-    public HashMap<String, Integer> getS() {
-        return this.S;
+    @Override
+    public void add(Summary<long[]> s) {
+        IntervalSummary iS = (IntervalSummary) s;
+
+        if (iS.oStart < this.oStart)
+            this.oStart = iS.oStart;
+        if (iS.oEnd > this.oEnd)
+            this.oEnd = iS.oEnd;
     }
 }

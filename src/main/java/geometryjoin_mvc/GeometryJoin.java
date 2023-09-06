@@ -3,7 +3,7 @@
 // (powered by FernFlower decompiler)
 //
 
-package geometryjoin;
+package geometryjoin_mvc;
 
 import com.esri.core.geometry.Envelope;
 import com.esri.core.geometry.ogc.OGCGeometry;
@@ -72,6 +72,7 @@ class computeMBR implements Summary<OGCGeometry> {
 public class GeometryJoin implements FlexibleJoin<OGCGeometry, GeometryJoinConfiguration> {
     public int n;
     Envelope env1 = new Envelope();
+    public static long matchCounter = 0;
 
     public GeometryJoin(int n) {
         this.n = n;
@@ -99,6 +100,8 @@ public class GeometryJoin implements FlexibleJoin<OGCGeometry, GeometryJoinConfi
         if (c1.MBR[1][1] > c2.MBR[1][1]) {
             c1.MBR[1][1] = c2.MBR[1][1];
         }
+
+        matchCounter = 0;
 
         return new GeometryJoinConfiguration(c1.MBR, this.n);
     }
@@ -143,7 +146,17 @@ public class GeometryJoin implements FlexibleJoin<OGCGeometry, GeometryJoinConfi
 
         return returnArray;
     }
+
+    @Override
+    public boolean match(int b1, int b2) {
+        matchCounter++;
+        return FlexibleJoin.super.match(b1, b2);
+    }
+
     public boolean verify(OGCGeometry k1, OGCGeometry k2) {
-        return k1.contains(k2);
+        //if(matchCounter != 0) {
+            System.out.println("Geometry Join Match Counter:"+matchCounter);
+        //}
+        return true;
     }
 }
