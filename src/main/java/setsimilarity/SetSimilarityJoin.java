@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 
 public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConfig> {
     Double SimilarityThreshold = 0.0;
-
+    boolean printedWC = false;
     public SetSimilarityJoin(Double SimilarityThreshold) {
         this.SimilarityThreshold = SimilarityThreshold;
     }
@@ -46,6 +46,7 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
     public SetSimilarityConfig divide(Summary<String> s1, Summary<String> s2) {
         WordCount s1wc = (WordCount) s1;
         WordCount s2wc = (WordCount) s2;
+
         for (String token : s1wc.WordCountMap.keySet()) {
             s2wc.WordCountMap.merge(token, s1wc.WordCountMap.get(token), Integer::sum);
         }
@@ -110,7 +111,11 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
     public int[] assign1(String k1, SetSimilarityConfig setSimilarityConfig) {
 
         ArrayList<Integer> ranks = new ArrayList<>();
-
+//        if(!printedWC) {
+//            System.out.println("WC1 Size:"+setSimilarityConfig.S.size());
+//            System.out.println("Add Counter:"+setSimilarityConfig.addCount);
+//            printedWC = true;
+//        }
         int characterIndex = 0;
         int stringLength = k1.length();
         int tokenCount = 0;
@@ -129,10 +134,14 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
             tokenEnd = characterIndex;
             if(tokenEnd > tokenStart) {
                 String token = k1.substring(tokenStart, tokenEnd).toLowerCase();
-                if(setSimilarityConfig.S.containsKey(token)) {
-                    ranks.add(setSimilarityConfig.S.get(token));
-                    tokenCount++;
-                }
+                //if(setSimilarityConfig.S.containsKey(token)) {
+                    Integer rank = setSimilarityConfig.S.get(token);
+//                    if(rank!=null) {
+                        ranks.add(rank);
+                        tokenCount++;
+
+//                    } else System.out.println("Couldn't find '"+token+"' in hash map");
+                //}
 
             }
         }
@@ -342,8 +351,7 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
 
     }
 
-    @Override
-    public boolean verify(String k1, String k2) {
+    public boolean verify_js(String k1, String k2) {
 
         ArrayList<String> left = tokenize(k1);
         ArrayList<String> right = tokenize(k2);
@@ -449,6 +457,78 @@ public class SetSimilarityJoin implements FlexibleJoin<String, SetSimilarityConf
             }
         }
         return tokens;
+    }
+
+    @Override
+    public boolean verify(int b1, String k1, int b2, String k2, SetSimilarityConfig c) {
+        ArrayList<String> left = tokenize(k1);
+        ArrayList<String> right = tokenize(k2);
+
+        int leftLength = left.size();
+        int rightLength = right.size();
+
+        // apply length filter
+        int lengthLowerBound = (int) Math.ceil(SimilarityThreshold * leftLength);
+
+        boolean passesLengthFilter =
+                (lengthLowerBound <= rightLength) && (rightLength <= 1.0f / SimilarityThreshold * leftLength);
+        if (!passesLengthFilter) {
+            return false;
+        }
+
+        double intersectionSize = 0;
+
+        HashMap<String, Integer> map = new HashMap<>();
+
+        ArrayList<Integer> ranksLeft = new ArrayList<>();
+        ArrayList<Integer> ranksRight = new ArrayList<>();
+
+        for(String token: left) {
+            map.merge(token, 1, Integer::sum);
+            ranksLeft.add(c.S.get(token));
+        }
+
+        for(String token: right) {
+            ranksRight.add(c.S.get(token));
+            if (map.containsKey(token)) {
+                if (map.get(token) == 1) map.remove(token);
+                else {
+                    map.merge(token, -1, Integer::sum);
+                }
+                intersectionSize++;
+            }
+        }
+
+        double sim = (intersectionSize / ((leftLength + rightLength) - intersectionSize));
+        sim = Math.round(sim * 100000000d) / 100000000d;
+
+        if (sim >= SimilarityThreshold) {
+
+            Collections.sort(ranksLeft);
+            Collections.sort(ranksRight);
+
+            int i = 0;
+            int j = 0;
+
+            while(i < ranksLeft.size() && j < ranksRight.size()) {
+                if (ranksLeft.get(i).equals(ranksRight.get(j))) {
+                    return ranksLeft.get(i) == b1 && ranksRight.get(j) == b2;
+                }
+
+                if (ranksLeft.get(i) > ranksRight.get(j)) {
+                    ++j;
+                } else {
+                    ++i;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean verify(String s, String t1) {
+        return false;
     }
 
 }

@@ -24,17 +24,27 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class WordCount implements Summary<String> {
 
-    public ConcurrentHashMap<String, Integer> WordCountMap = new ConcurrentHashMap<>();
+    public ConcurrentHashMap<String, Integer> WordCountMap;
+    //static private AtomicInteger addCount = new AtomicInteger(0);
+
+    public WordCount() {
+        //addCount.set(0);
+        WordCountMap = new ConcurrentHashMap<>();
+        //System.out.println("New Summary");
+    }
 
     @Override
     public void add(String k) {
+        //addCount.incrementAndGet();
         int characterIndex = 0;
         int stringLength = k.length();
         int tokenStart;
         int tokenEnd;
+        ArrayList<String> tokens = new ArrayList<>();
         while (characterIndex < stringLength) {
             //skip separators
             while (characterIndex < stringLength && isSeparator(k.charAt(characterIndex))) {
@@ -47,10 +57,18 @@ public class WordCount implements Summary<String> {
             }
             tokenEnd = characterIndex;
             if(tokenEnd > tokenStart) {
+//                tokens.add(k.substring(tokenStart, tokenEnd).toLowerCase());
                 String token = k.substring(tokenStart, tokenEnd).toLowerCase();
-                WordCountMap.merge(token, 1, Integer::sum);
+                WordCountMap.merge(token,1,Integer::sum);
+//                String token = k.substring(tokenStart, tokenEnd).toLowerCase();
+//                Integer val = WordCountMap.getOrDefault(token, 0);
+//                WordCountMap.put(token, val + 1);
             }
         }
+//        for (String token: tokens
+//             ) {
+//            WordCountMap.merge(token,1,Integer::sum);
+//        }
     }
 
     public void add_sb(String k) {
@@ -77,7 +95,9 @@ public class WordCount implements Summary<String> {
     public void add(Summary<String> s) {
         WordCount wc = (WordCount) s;
         for (String token : wc.WordCountMap.keySet()) {
-            WordCountMap.merge(token, wc.WordCountMap.get(token), Integer::sum);
+            Integer val = WordCountMap.getOrDefault(token, 0);
+            WordCountMap.put(token, val + wc.WordCountMap.get(token));
+            //WordCountMap.merge(token, wc.WordCountMap.get(token), Integer::sum);
         }
     }
 
@@ -109,5 +129,9 @@ public class WordCount implements Summary<String> {
                 || Character.getType(c) == Character.OTHER_NUMBER);
         //return Character.isSpaceChar(c);
     }
+
+//    public AtomicInteger getAddCount() {
+//        return addCount;
+//    }
 }
 
